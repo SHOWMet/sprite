@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js canvas - sprite</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			a {
+				color:#0078ff;
+			}
+			#teList li{
+				
+				width: 40px;
+				height: 40px;
+				font-size: 40px;
+				line-height: 40px;
+				color: saddlebrown;
+				list-style: none;
+				border-radius: 5px;
+				border: 1px solid skyblue;
+				text-align: center;
+				cursor: pointer;
+			}
+		</style>
+		<script src="js/three.js"></script>
+		<script src="js/tween.min.js"></script>
+		<script src="js/OBJLoader.js"></script>
+	</head>
+	<body>
+
+		
+	<!--	<script src="js/renderers/Projector.js"></script>-->
+		<!--<script src="js/renderers/CanvasRenderer.js"></script>-->
+		
+			<ul  id="teList" style="position: absolute; width: 300px; height:125px;left: 0; top: 0;">
+				<li id="f1">1</li>
+				<li id="f2">2</li>
+				<li id="f3">3</li>
+				<li id="f4">4</li>
+			</ul>
+		
+		<script>
+
+			var mouseX = 0, mouseY = 0,
+
+			windowHalfX = window.innerWidth / 2,
+			windowHalfY = window.innerHeight / 2,
+
+			SEPARATION = 200,
+			AMOUNTX = 10,
+			AMOUNTY = 10,
+
+			camera, scene, renderer,points=[],objects=[],tips=[],citys =[],spheres=[];
+
+			init();
+			animate();
+
+			function init() {
+
+				var container, separation = 100, amountX = 50, amountY = 50,
+				particles, particle;
+
+				container = document.createElement('div');
+				document.body.appendChild(container);
+
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
+				camera.position.z = 100;
+
+				scene = new THREE.Scene();
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+			
+				// particles
+
+				var PI2 = Math.PI * 2;
+//				var material = new THREE.SpriteCanvasMaterial( {
+//
+//					color: 0xffffff,
+//					program: function ( context ) {
+//
+//						context.beginPath();
+//						context.arc( 0, 0, 0.5, 0, PI2, true );
+//						context.fill();
+//
+//					}
+//
+//				} );
+				var material = new THREE.SpriteMaterial( {
+										map: new THREE.CanvasTexture( generateSprite() ),
+										blending: THREE.AdditiveBlending,
+										size:0.1,
+					} );
+
+				var geometry = new THREE.Geometry();
+
+				for ( var i = 0; i < 5000; i ++ ) {
+
+					particle = new THREE.Sprite( material );
+					particle.position.x = Math.random() * 2 - 1;
+					particle.position.y = Math.random() * 2 - 1;
+					particle.position.z = Math.random() * 2 - 1;
+					//particle.position.normalize();//3维向量的单位化几何意义：转换为长度为1，方向相同的向量
+
+					particle.position.multiplyScalar( Math.random() * 10 + 450 );
+//					particle.scale.x = particle.scale.y = ;
+					particle.scale.set(3,3,3)
+					scene.add( particle );
+					//points.push(particle);
+					objects.push(particle)
+					geometry.vertices.push( particle.position );
+
+				}
+			
+				// lines
+				
+				var line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xffffff, opacity: 0.5 } ) );
+				//scene.add( line );
+
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+				document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+
+				//
+//				document.addEventListener('click',moveClick,false)
+//				document.addEventListener('dblclick',moveClick2,false)
+				document.querySelector("#f1").onclick = function(){
+					transform( points, 2000 )
+				}
+				document.querySelector("#f2").onclick = function(){
+					transform( spheres, 2000 )
+				}
+				document.querySelector("#f3").onclick = function(){
+					transform( tips, 2000 )
+				}
+				document.querySelector("#f4").onclick = function(){
+					transform( citys, 2000 )
+				}
+				
+				
+				window.addEventListener( 'resize', onWindowResize, false );
+				spheresL()
+				spheres2()
+
+			}
+			
+		
+			
+			
+			function onWindowResize() {
+
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			//
+
+			function onDocumentMouseMove(event) {
+
+				mouseX = event.clientX - windowHalfX;
+				mouseY = event.clientY - windowHalfY;
+
+			}
+
+			function onDocumentTouchStart( event ) {
+
+				if ( event.touches.length > 1 ) {
+
+					event.preventDefault();
+
+					mouseX = event.touches[ 0 ].pageX - windowHalfX;
+					mouseY = event.touches[ 0 ].pageY - windowHalfY;
+
+				}
+
+			}
+
+			function onDocumentTouchMove( event ) {
+
+				if ( event.touches.length == 1 ) {
+
+					event.preventDefault();
+
+					mouseX = event.touches[ 0 ].pageX - windowHalfX;
+					mouseY = event.touches[ 0 ].pageY - windowHalfY;
+
+				}
+
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+				TWEEN.update();
+				render();
+
+			}
+			
+			function render() {
+
+				camera.position.x += ( mouseX - camera.position.x ) * .05;
+				camera.position.y += ( - mouseY + 200 - camera.position.y ) * .05;
+				camera.lookAt( scene.position );
+				
+				renderer.render( scene, camera );
+
+			}
+			
+			
+		
+			function generateSprite() {
+
+				var canvas = document.createElement( 'canvas' );
+				canvas.width = 16;
+				canvas.height = 16;
+
+				var context = canvas.getContext( '2d' );
+				var gradient = context.createRadialGradient( canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width / 2 );
+				gradient.addColorStop( 0, 'rgba(255,255,255,1)' );
+				gradient.addColorStop( 0.2, 'rgba(0,255,255,1)' );
+				gradient.addColorStop( 0.4, 'rgba(215,0,64,0.5)' );
+				gradient.addColorStop( 1, 'rgba(0,0,0,1)' );
+
+				context.fillStyle = gradient;
+				context.fillRect( 0, 0, canvas.width, canvas.height );
+
+				return canvas;
+
+			}
+			
+			
+			function moveClick(e) {
+				console.log(e.button)
+//				points.forEach(function(e,i){
+//					console.log(e)
+//					new TWEEN.Tween( e.position ).to( {
+//						x: Math.random() * 80 - 40,
+//						y: Math.random() * 80 - 40,
+//						z: Math.random() * 80 - 40 }, 2000 )
+//					.easing( TWEEN.Easing.Elastic.Out).start();
+//
+//					new TWEEN.Tween( e.rotation ).to( {
+//						x: Math.random() * 2 * Math.PI,
+//						y: Math.random() * 2 * Math.PI,
+//						z: Math.random() * 2 * Math.PI }, 2000 )
+//					.easing( TWEEN.Easing.Elastic.Out).start();
+//				})
+				transform( points, 2000 )
+				
+			}
+		
+			function spheres2() {
+				var vector = new THREE.Vector3();
+				var spherical = new THREE.Spherical();
+
+				for ( var i = 0, l = objects.length; i < l; i ++ ) {
+
+					var phi = Math.acos( -1 + ( 2 * i ) / l );
+					var theta = Math.sqrt( l * Math.PI ) * phi;
+
+					var object = new THREE.Object3D();
+
+					spherical.set( 200, phi, theta );
+
+					object.position.setFromSpherical( spherical );
+
+					vector.copy( object.position ).multiplyScalar( 2 );
+
+					object.lookAt( vector );
+					
+					spheres.push( object );
+
+				}
+			}
+			function spheresL() {
+				var vector = new THREE.Vector3();
+				var spherical = new THREE.Spherical();
+
+				for ( var i = 0, l = objects.length; i < l; i ++ ) {
+
+					 var vertex = new THREE.Vector3();
+		            vertex.x = Math.random() * 2 - 1;
+		            vertex.y = Math.random() * 2 - 1;
+		            vertex.z = Math.random() * 2 - 1;
+					vertex.multiplyScalar(500);
+					var object = new THREE.Object3D();
+
+					
+					object.position.set(vertex.x,vertex.y,vertex.z )
+				
+
+					vector.copy(object.position)
+
+					object.lookAt( vector );
+					
+					tips.push( object );
+
+				}
+			}
+			
+			
+			function transform( targets, duration ) {
+
+				TWEEN.removeAll();
+
+				for ( var i = 0; i < objects.length; i ++ ) {
+
+					var object = objects[ i ];
+					var target = targets[ i ];
+
+					new TWEEN.Tween( object.position )
+						.to( { x: target.position.x, y: target.position.y, z: target.position.z }, Math.random() * duration + duration )
+						.easing( TWEEN.Easing.Elastic.InOut )
+						.start();
+
+					new TWEEN.Tween( object.rotation )
+						.to( { x: target.rotation.x, y: target.rotation.y, z: target.rotation.z }, Math.random() * duration + duration )
+						.easing( TWEEN.Easing.Elastic.InOut )
+						.start();
+
+				}
+
+				new TWEEN.Tween( this )
+					.to( {}, duration * 2 )
+					.onUpdate( render )
+					.start();
+				console.log(targets)
+			}
+			
+			loadModle()
+			function loadModle() {
+				 var loader = new THREE.OBJLoader();
+				 
+				 var geometry = new THREE.Geometry()
+				 loader.load('obj/file.obj',function(cow){
+				 
+				 	
+				 	var geo = new THREE.Geometry()
+				 	for(var j=0;j<cow.children.length;j++){
+				 		var	model = cow.children[j].geometry;
+				 		var Aces = model.attributes.position.array
+					 	for(var i=0;i<Aces.length+3;i+=81){
+					 		var vec = new THREE.Vector3(Aces[i],Aces[i+1],Aces[i+2])
+					 	
+					 		geometry.vertices.push(vec);
+					 		
+								 		var object = new THREE.Object3D();
+			
+										
+					
+										object.position.copy( vec );
+					
+										
+					
+										object.lookAt( vec );
+										
+										points.push( object );
+					 	}
+					}
+				 	
+					 	var line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xffffff, opacity: 0.5 } ) );
+						//scene.add( line );
+				 })
+				 loader.load('obj/city.obj',function(cow){
+				 
+				 	
+				 	var geo = new THREE.Geometry()
+				 	for(var j=0;j<cow.children.length;j++){
+				 		var	model = cow.children[j].geometry;
+				 		var Aces = model.attributes.position.array
+					 	for(var i=0;i<Aces.length+3;i+=81){
+					 		var vec = new THREE.Vector3(Aces[i],Aces[i+1],Aces[i+2])
+					 	
+					 		geometry.vertices.push(vec);
+					 		
+								 		var object = new THREE.Object3D();
+			
+										
+					
+										object.position.copy( vec );
+					
+										
+					
+										object.lookAt( vec );
+										
+										citys.push( object );
+					 	}
+					}
+				 	
+					 	var line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xffffff, opacity: 0.5 } ) );
+						//scene.add( line );
+				 })
+			}
+		</script>
+	</body>
+</html>
